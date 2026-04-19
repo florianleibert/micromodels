@@ -9,7 +9,7 @@ description = "Shippable local Qwen3-4B DFlash runtime for Apple Silicon"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "dflash-mlx @ git+https://github.com/Aryagm/dflash-mlx",
+    "dflash-mlx @ git+https://github.com/Aryagm/dflash-mlx@4f9e782556effcb42725231bd5c3f758614cbe15",
     "huggingface-hub>=1.0.0",
 ]
 
