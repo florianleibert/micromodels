@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "micromodel-ship"
+version = "0.1.0"
+description = "Shippable local Qwen3-4B DFlash runtime for Apple Silicon"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "dflash-mlx @ git+https://github.com/Aryagm/dflash-mlx",
+    "huggingface-hub>=1.0.0",
+]
+
+[project.scripts]
+micromodel-ship = "micromodel_ship.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["micromodel_ship*"]

@@ -1,0 +1,66 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="96" y1="72" x2="1150" y2="570" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F5F0E8"/>
+      <stop offset="0.55" stop-color="#E4D7C5"/>
+      <stop offset="1" stop-color="#D7C3AF"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFFDF8" stop-opacity="0.94"/>
+      <stop offset="1" stop-color="#F3E7D8" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="lineA" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#17313B"/>
+      <stop offset="1" stop-color="#7C5C43"/>
+    </linearGradient>
+    <filter id="shadow" x="130" y="76" width="1020" height="502" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#6B5848" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" rx="28" fill="#EFE6DB"/>
+  <rect x="42" y="38" width="1196" height="564" rx="28" fill="url(#bg)"/>
+  <circle cx="1118" cy="124" r="118" fill="#F8EEE2" fill-opacity="0.62"/>
+  <circle cx="1048" cy="510" r="132" fill="#E4D0BC" fill-opacity="0.42"/>
+  <circle cx="180" cy="126" r="90" fill="#F7EFE5" fill-opacity="0.5"/>
+
+  <g filter="url(#shadow)">
+    <rect x="158" y="112" width="964" height="430" rx="28" fill="url(#card)"/>
+  </g>
+
+  <rect x="202" y="162" width="198" height="36" rx="18" fill="#17313B"/>
+  <text x="224" y="186" fill="#F8F2E9" font-family="Georgia, 'Times New Roman', serif" font-size="18" letter-spacing="1.8">LOCAL APPLE SILICON</text>
+
+  <text x="202" y="262" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="700">micromodel-ship</text>
+  <text x="202" y="315" fill="#5E5248" font-family="Georgia, 'Times New Roman', serif" font-size="30">Qwen3-4B + DFlash, bundled and ready to hand off.</text>
+  <text x="202" y="360" fill="#5E5248" font-family="Georgia, 'Times New Roman', serif" font-size="30">Fast exact local inference with a minimal OpenAI-compatible API.</text>
+
+  <rect x="202" y="410" width="286" height="72" rx="20" fill="#17313B"/>
+  <text x="236" y="453" fill="#FAF5EE" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700">159-191 tok/s</text>
+  <text x="236" y="477" fill="#D5E4E8" font-family="Georgia, 'Times New Roman', serif" font-size="18">Measured local DFlash decode</text>
+
+  <rect x="510" y="410" width="250" height="72" rx="20" fill="#F0E1D1"/>
+  <text x="540" y="451" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-weight="700">3.3x-3.8x</text>
+  <text x="540" y="477" fill="#6A5E53" font-family="Georgia, 'Times New Roman', serif" font-size="18">vs plain MLX BF16</text>
+
+  <rect x="782" y="410" width="250" height="72" rx="20" fill="#F6EBDD"/>
+  <text x="812" y="451" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-weight="700">models/ + API</text>
+  <text x="812" y="477" fill="#6A5E53" font-family="Georgia, 'Times New Roman', serif" font-size="18">Bundled payload and server</text>
+
+  <path d="M848 208C899 182 949 173 999 182C1040 189 1070 208 1090 240" stroke="url(#lineA)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M824 262C878 233 931 223 983 233C1022 240 1054 257 1082 292" stroke="url(#lineA)" stroke-width="8" stroke-linecap="round" opacity="0.84"/>
+  <path d="M806 318C860 289 916 280 974 288C1018 294 1056 312 1098 356" stroke="url(#lineA)" stroke-width="8" stroke-linecap="round" opacity="0.68"/>
+
+  <circle cx="878" cy="216" r="10" fill="#17313B"/>
+  <circle cx="958" cy="184" r="10" fill="#7C5C43"/>
+  <circle cx="1038" cy="196" r="10" fill="#17313B"/>
+  <circle cx="888" cy="272" r="10" fill="#7C5C43"/>
+  <circle cx="972" cy="240" r="10" fill="#17313B"/>
+  <circle cx="1056" cy="266" r="10" fill="#7C5C43"/>
+  <circle cx="872" cy="328" r="10" fill="#17313B"/>
+  <circle cx="956" cy="298" r="10" fill="#7C5C43"/>
+  <circle cx="1046" cy="320" r="10" fill="#17313B"/>
+
+  <text x="828" y="158" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-weight="700">Architecture</text>
+  <text x="828" y="384" fill="#6A5E53" font-family="Georgia, 'Times New Roman', serif" font-size="20">target model + DFlash draft + exact verifier</text>
+</svg>

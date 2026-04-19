@@ -1,0 +1,43 @@
+<svg width="1280" height="520" viewBox="0 0 1280 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="70" y1="32" x2="1204" y2="484" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F1E7"/>
+      <stop offset="1" stop-color="#E2D0BD"/>
+    </linearGradient>
+    <filter id="shadow" x="118" y="58" width="1044" height="412" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#5D4A3D" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="520" rx="28" fill="#EEE4D9"/>
+  <rect x="34" y="28" width="1212" height="464" rx="28" fill="url(#bg)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="150" y="90" width="980" height="348" rx="26" fill="#FFFDF9" fill-opacity="0.95"/>
+  </g>
+
+  <text x="196" y="146" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="46" font-weight="700">Shipped model layout</text>
+  <text x="196" y="182" fill="#6A5F56" font-family="Georgia, 'Times New Roman', serif" font-size="22">Bundled payload inside models/, ready for local offline serving</text>
+
+  <rect x="196" y="220" width="406" height="166" rx="24" fill="#17313B"/>
+  <text x="226" y="264" fill="#F7F2E9" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="700">models/target</text>
+  <text x="226" y="302" fill="#D7E4E8" font-family="Georgia, 'Times New Roman', serif" font-size="20">Qwen3-4B BF16 target bundle</text>
+  <text x="226" y="336" fill="#F7F2E9" font-family="Georgia, 'Times New Roman', serif" font-size="19">model-00001-of-00002.safetensors  ~5.32 GB</text>
+  <text x="226" y="364" fill="#F7F2E9" font-family="Georgia, 'Times New Roman', serif" font-size="19">model-00002-of-00002.safetensors  ~2.72 GB</text>
+
+  <rect x="628" y="220" width="308" height="166" rx="24" fill="#F4E4D3"/>
+  <text x="656" y="264" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="700">models/draft</text>
+  <text x="656" y="302" fill="#6B6057" font-family="Georgia, 'Times New Roman', serif" font-size="20">DFlash draft bundle</text>
+  <text x="656" y="336" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="19">model.safetensors  ~1.07 GB</text>
+  <text x="656" y="364" fill="#6B6057" font-family="Georgia, 'Times New Roman', serif" font-size="19">plus config + adapter files</text>
+
+  <rect x="962" y="220" width="126" height="166" rx="24" fill="#F8EEE2"/>
+  <text x="990" y="262" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-weight="700">Total</text>
+  <text x="990" y="318" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="40" font-weight="700">~9.1</text>
+  <text x="990" y="346" fill="#6B6057" font-family="Georgia, 'Times New Roman', serif" font-size="20">GB</text>
+
+  <path d="M592 303H626" stroke="#8A6C53" stroke-width="8" stroke-linecap="round"/>
+  <path d="M936 303H960" stroke="#8A6C53" stroke-width="8" stroke-linecap="round"/>
+
+  <text x="196" y="430" fill="#6A5F56" font-family="Georgia, 'Times New Roman', serif" font-size="20">There is no single monolithic binary. The shipped model is a directory bundle of safetensors and config files.</text>
+</svg>

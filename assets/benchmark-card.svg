@@ -1,0 +1,46 @@
+<svg width="1280" height="520" viewBox="0 0 1280 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="104" y1="46" x2="1140" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F2EA"/>
+      <stop offset="1" stop-color="#E5D3BF"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#17313B"/>
+      <stop offset="1" stop-color="#6F513B"/>
+    </linearGradient>
+    <filter id="shadow" x="122" y="61" width="1036" height="408" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="26" flood-color="#5E4E3F" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="520" rx="28" fill="#F0E6DA"/>
+  <rect x="38" y="28" width="1204" height="464" rx="28" fill="url(#bg)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="148" y="87" width="984" height="356" rx="26" fill="#FFFDF8" fill-opacity="0.94"/>
+  </g>
+
+  <text x="196" y="150" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="48" font-weight="700">Benchmark snapshot</text>
+  <text x="196" y="188" fill="#685D55" font-family="Georgia, 'Times New Roman', serif" font-size="24">Local Apple Silicon, exact speculative decoding, bundled Qwen3-4B + DFlash draft</text>
+
+  <rect x="196" y="226" width="252" height="144" rx="24" fill="#17313B"/>
+  <text x="226" y="275" fill="#F8F2E8" font-family="Georgia, 'Times New Roman', serif" font-size="22">DFLASH DECODE</text>
+  <text x="226" y="326" fill="#F8F2E8" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700">159-191</text>
+  <text x="226" y="355" fill="#CBDADF" font-family="Georgia, 'Times New Roman', serif" font-size="22">tokens / second</text>
+
+  <rect x="476" y="226" width="252" height="144" rx="24" fill="#F4E4D3"/>
+  <text x="506" y="275" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="22">SPEEDUP</text>
+  <text x="506" y="326" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700">3.3x-3.8x</text>
+  <text x="506" y="355" fill="#6D6156" font-family="Georgia, 'Times New Roman', serif" font-size="22">vs plain MLX BF16</text>
+
+  <rect x="756" y="226" width="324" height="144" rx="24" fill="#F8EEE2"/>
+  <text x="786" y="275" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="22">MEMORY</text>
+  <text x="786" y="326" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700">8.1-9.4 GB</text>
+  <text x="786" y="355" fill="#6D6156" font-family="Georgia, 'Times New Roman', serif" font-size="22">plain baseline to DFlash peak</text>
+
+  <rect x="196" y="392" width="884" height="20" rx="10" fill="#E6D7C7"/>
+  <rect x="196" y="392" width="296" height="20" rx="10" fill="#9B7A60"/>
+  <rect x="196" y="392" width="884" height="20" rx="10" fill="url(#ink)" fill-opacity="0.12"/>
+  <text x="196" y="438" fill="#685D55" font-family="Georgia, 'Times New Roman', serif" font-size="20">Plain MLX BF16 baseline</text>
+  <text x="980" y="438" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="end">Bundled DFlash run</text>
+</svg>
