@@ -1,66 +1,79 @@
 <svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="96" y1="72" x2="1150" y2="570" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F5F0E8"/>
-      <stop offset="0.55" stop-color="#E4D7C5"/>
-      <stop offset="1" stop-color="#D7C3AF"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F1E6"/>
+      <stop offset="0.5" stop-color="#EADDC8"/>
+      <stop offset="1" stop-color="#D8C3A9"/>
     </linearGradient>
-    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#FFFDF8" stop-opacity="0.94"/>
-      <stop offset="1" stop-color="#F3E7D8" stop-opacity="0.9"/>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="1" stop-color="#FDF4E6"/>
     </linearGradient>
-    <linearGradient id="lineA" x1="0" y1="0" x2="1" y2="0">
-      <stop stop-color="#17313B"/>
-      <stop offset="1" stop-color="#7C5C43"/>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1A3744"/>
+      <stop offset="1" stop-color="#0F2129"/>
     </linearGradient>
-    <filter id="shadow" x="130" y="76" width="1020" height="502" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#6B5848" flood-opacity="0.18"/>
+    <linearGradient id="barDflash" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#2B566A"/>
+      <stop offset="1" stop-color="#17313B"/>
+    </linearGradient>
+    <linearGradient id="barPlain" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#CDB59A"/>
+      <stop offset="1" stop-color="#A8886A"/>
+    </linearGradient>
+    <filter id="shadow" x="60" y="60" width="1160" height="520" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="28" flood-color="#5A4632" flood-opacity="0.18"/>
     </filter>
   </defs>
 
-  <rect width="1280" height="640" rx="28" fill="#EFE6DB"/>
-  <rect x="42" y="38" width="1196" height="564" rx="28" fill="url(#bg)"/>
-  <circle cx="1118" cy="124" r="118" fill="#F8EEE2" fill-opacity="0.62"/>
-  <circle cx="1048" cy="510" r="132" fill="#E4D0BC" fill-opacity="0.42"/>
-  <circle cx="180" cy="126" r="90" fill="#F7EFE5" fill-opacity="0.5"/>
+  <rect width="1280" height="640" fill="#EFE5D6"/>
+  <rect x="32" y="28" width="1216" height="584" rx="32" fill="url(#bg)"/>
+  <circle cx="1172" cy="96" r="132" fill="#FFFDF6" fill-opacity="0.55"/>
+  <circle cx="116" cy="560" r="166" fill="#C9B091" fill-opacity="0.35"/>
 
   <g filter="url(#shadow)">
-    <rect x="158" y="112" width="964" height="430" rx="28" fill="url(#card)"/>
+    <rect x="88" y="80" width="1104" height="480" rx="30" fill="url(#card)"/>
   </g>
 
-  <rect x="202" y="162" width="198" height="36" rx="18" fill="#17313B"/>
-  <text x="224" y="186" fill="#F8F2E9" font-family="Georgia, 'Times New Roman', serif" font-size="18" letter-spacing="1.8">LOCAL APPLE SILICON</text>
+  <!-- Badge -->
+  <rect x="132" y="122" width="176" height="38" rx="19" fill="url(#ink)"/>
+  <circle cx="153" cy="141" r="5" fill="#86E2A2"/>
+  <text x="168" y="147" fill="#F2F7F8" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.8">APPLE SILICON</text>
 
-  <text x="202" y="262" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="700">micromodel-ship</text>
-  <text x="202" y="315" fill="#5E5248" font-family="Georgia, 'Times New Roman', serif" font-size="30">Qwen3-4B + DFlash, bundled and ready to hand off.</text>
-  <text x="202" y="360" fill="#5E5248" font-family="Georgia, 'Times New Roman', serif" font-size="30">Fast exact local inference with a minimal OpenAI-compatible API.</text>
+  <!-- Title -->
+  <text x="132" y="228" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="60" font-weight="700" letter-spacing="-1.2">micromodel-ship</text>
 
-  <rect x="202" y="410" width="286" height="72" rx="20" fill="#17313B"/>
-  <text x="236" y="453" fill="#FAF5EE" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700">159-191 tok/s</text>
-  <text x="236" y="477" fill="#D5E4E8" font-family="Georgia, 'Times New Roman', serif" font-size="18">Measured local DFlash decode</text>
+  <!-- Subtitle -->
+  <text x="132" y="270" fill="#5A4E42" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20">Fast exact local inference for Qwen3-4B with DFlash</text>
+  <text x="132" y="298" fill="#5A4E42" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20">speculative decoding. Bundled payload, OpenAI-compatible API.</text>
 
-  <rect x="510" y="410" width="250" height="72" rx="20" fill="#F0E1D1"/>
-  <text x="540" y="451" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-weight="700">3.3x-3.8x</text>
-  <text x="540" y="477" fill="#6A5E53" font-family="Georgia, 'Times New Roman', serif" font-size="18">vs plain MLX BF16</text>
+  <!-- Benchmark chart on right -->
+  <text x="750" y="146" fill="#8A7A68" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="2.2">DECODE SPEED · TOKENS / SEC</text>
 
-  <rect x="782" y="410" width="250" height="72" rx="20" fill="#F6EBDD"/>
-  <text x="812" y="451" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-weight="700">models/ + API</text>
-  <text x="812" y="477" fill="#6A5E53" font-family="Georgia, 'Times New Roman', serif" font-size="18">Bundled payload and server</text>
+  <text x="750" y="188" fill="#6A5E52" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15">Plain MLX-LM BF16</text>
+  <rect x="750" y="200" width="103" height="34" rx="6" fill="url(#barPlain)"/>
+  <text x="866" y="224" fill="#17313B" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="700">55</text>
 
-  <path d="M848 208C899 182 949 173 999 182C1040 189 1070 208 1090 240" stroke="url(#lineA)" stroke-width="8" stroke-linecap="round"/>
-  <path d="M824 262C878 233 931 223 983 233C1022 240 1054 257 1082 292" stroke="url(#lineA)" stroke-width="8" stroke-linecap="round" opacity="0.84"/>
-  <path d="M806 318C860 289 916 280 974 288C1018 294 1056 312 1098 356" stroke="url(#lineA)" stroke-width="8" stroke-linecap="round" opacity="0.68"/>
+  <text x="750" y="262" fill="#6A5E52" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15">DFlash speculative (this repo)</text>
+  <rect x="750" y="274" width="358" height="34" rx="6" fill="url(#barDflash)"/>
+  <text x="1122" y="298" fill="#17313B" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="700">191</text>
 
-  <circle cx="878" cy="216" r="10" fill="#17313B"/>
-  <circle cx="958" cy="184" r="10" fill="#7C5C43"/>
-  <circle cx="1038" cy="196" r="10" fill="#17313B"/>
-  <circle cx="888" cy="272" r="10" fill="#7C5C43"/>
-  <circle cx="972" cy="240" r="10" fill="#17313B"/>
-  <circle cx="1056" cy="266" r="10" fill="#7C5C43"/>
-  <circle cx="872" cy="328" r="10" fill="#17313B"/>
-  <circle cx="956" cy="298" r="10" fill="#7C5C43"/>
-  <circle cx="1046" cy="320" r="10" fill="#17313B"/>
+  <!-- Speedup pill -->
+  <rect x="1038" y="214" width="72" height="34" rx="17" fill="#17313B"/>
+  <text x="1074" y="237" fill="#F4F8F9" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle">3.5×</text>
 
-  <text x="828" y="158" fill="#17313B" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-weight="700">Architecture</text>
-  <text x="828" y="384" fill="#6A5E53" font-family="Georgia, 'Times New Roman', serif" font-size="20">target model + DFlash draft + exact verifier</text>
+  <text x="750" y="352" fill="#8A7A68" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="1.5">APPLE M5 MAX · 512 TOKENS · PARALLEL-REPLAY</text>
+
+  <!-- Stat row -->
+  <rect x="132" y="410" width="326" height="102" rx="20" fill="url(#ink)"/>
+  <text x="158" y="446" fill="#A3C8D6" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1.8">DFLASH DECODE</text>
+  <text x="158" y="491" fill="#F4F8F9" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="36" font-weight="700">159–191 tok/s</text>
+
+  <rect x="478" y="410" width="258" height="102" rx="20" fill="#F2E1CE"/>
+  <text x="504" y="446" fill="#8A6F52" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1.8">SPEEDUP VS MLX</text>
+  <text x="504" y="491" fill="#17313B" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="36" font-weight="700">3.3× – 3.8×</text>
+
+  <rect x="756" y="410" width="402" height="102" rx="20" fill="#F8EEDE"/>
+  <text x="782" y="446" fill="#8A6F52" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1.8">WHAT SHIPS</text>
+  <text x="782" y="491" fill="#17313B" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="22" font-weight="700">runtime · API · benchmarks · models</text>
 </svg>
