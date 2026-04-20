@@ -99,14 +99,27 @@ class MicroModelServer:
                     self._send_json(HTTPStatus.BAD_REQUEST, {"error": {"message": f"invalid json: {exc}"}})
                     return
 
-                if payload.get("stream"):
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": {"message": "streaming is not implemented"}})
-                    return
-
                 try:
                     prompt = build_chat_prompt_from_messages(payload.get("messages") or [])
                     max_new_tokens = int(payload.get("max_completion_tokens") or payload.get("max_tokens") or DEFAULT_MAX_NEW_TOKENS)
                     temperature = float(payload.get("temperature", DEFAULT_TEMPERATURE))
+                except Exception as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": {"message": str(exc)}})
+                    return
+
+                if payload.get("stream"):
+                    self._handle_stream(
+                        runtime=runtime,
+                        server_state=server_state,
+                        model_name=model_name,
+                        prompt=prompt,
+                        max_new_tokens=max_new_tokens,
+                        temperature=temperature,
+                        profile=bool(payload.get("profile", False)),
+                    )
+                    return
+
+                try:
                     result = runtime.generate(
                         GenerationRequest(
                             prompt=prompt,
@@ -164,6 +177,110 @@ class MicroModelServer:
                     },
                 }
                 self._send_json(HTTPStatus.OK, response)
+
+            def _write_sse(self, chunk: dict[str, Any]) -> None:
+                self.wfile.write(b"data: ")
+                self.wfile.write(json.dumps(chunk).encode("utf-8"))
+                self.wfile.write(b"\n\n")
+                self.wfile.flush()
+
+            def _handle_stream(
+                self,
+                runtime: ModelRuntime,
+                server_state: dict[str, Any],
+                model_name: str,
+                prompt: str,
+                max_new_tokens: int,
+                temperature: float,
+                profile: bool,
+            ) -> None:
+                chunk_id = f"chatcmpl-{uuid.uuid4().hex}"
+                created = int(time.time())
+
+                def base_chunk(delta: dict[str, Any], finish_reason: str | None = None) -> dict[str, Any]:
+                    return {
+                        "id": chunk_id,
+                        "object": "chat.completion.chunk",
+                        "created": created,
+                        "model": model_name,
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": delta,
+                                "finish_reason": finish_reason,
+                            }
+                        ],
+                    }
+
+                self.close_connection = True
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "text/event-stream")
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Connection", "close")
+                self.send_header("X-Accel-Buffering", "no")
+                self.end_headers()
+
+                stream = runtime.stream_generate(
+                    GenerationRequest(
+                        prompt=prompt,
+                        max_new_tokens=max_new_tokens,
+                        temperature=temperature,
+                        profile=profile,
+                    )
+                )
+                try:
+                    self._write_sse(base_chunk({"role": "assistant"}))
+                    done_event: dict[str, Any] | None = None
+                    for event in stream:
+                        etype = event.get("type")
+                        if etype == "delta":
+                            self._write_sse(base_chunk({"content": event["text"]}))
+                        elif etype == "done":
+                            done_event = event
+                except (BrokenPipeError, ConnectionResetError):
+                    stream.close()
+                    return
+                except Exception as exc:
+                    stream.close()
+                    err = base_chunk({}, finish_reason="stop")
+                    err["error"] = {"message": str(exc)}
+                    try:
+                        self._write_sse(err)
+                        self.wfile.write(b"data: [DONE]\n\n")
+                        self.wfile.flush()
+                    except Exception:
+                        pass
+                    return
+
+                if done_event is None:
+                    return
+
+                metrics = done_event["metrics"]
+                completion_tokens = int(done_event.get("generated_token_count", 0))
+                prompt_tokens = int(metrics.get("num_input_tokens", 0))
+                server_state["last_completion"] = {
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "generation_tps": metrics.get("generation_tps"),
+                    "end_to_end_tps": metrics.get("end_to_end_tps"),
+                    "avg_acceptance_length": metrics.get("avg_acceptance_length"),
+                    "peak_memory_gb": metrics.get("peak_memory_gb"),
+                    "target_path": done_event.get("target_path"),
+                    "draft_path": done_event.get("draft_path"),
+                    "updated_at": int(time.time()),
+                }
+                try:
+                    final = base_chunk({}, finish_reason=metrics.get("finish_reason", "stop"))
+                    final["usage"] = {
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": prompt_tokens + completion_tokens,
+                    }
+                    self._write_sse(final)
+                    self.wfile.write(b"data: [DONE]\n\n")
+                    self.wfile.flush()
+                except (BrokenPipeError, ConnectionResetError):
+                    return
 
             def log_message(self, format: str, *args: Any) -> None:
                 return
