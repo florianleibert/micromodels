@@ -24,5 +24,3 @@ dist/
 models/
 metrics/*.txt
 
-# Lock files
-uv.lock
