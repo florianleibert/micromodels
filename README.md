@@ -206,6 +206,60 @@ Pass the token via `Authorization: Bearer <token>`. An empty token (unset env)
 disables auth entirely. See [capabilities.json](capabilities.json) for the
 machine-readable manifest consumed by flocode.
 
+## Using with flocode
+
+[flocode](https://github.com/florianleibert/openflo) is the AI coding agent
+that this server is primarily designed to feed. The integration has been
+end-to-end tested on Apple Silicon with real weights. See
+[openflo/HOWTO.md](https://github.com/florianleibert/openflo/blob/main/HOWTO.md)
+for the full guide; the short version is:
+
+```bash
+# 1. In this (micromodels) repo, once:
+uv sync
+
+# 2. In flocode, print the preset you want and paste into ~/.config/flocode/flocode.json
+#    (edit local_model.work_dir to point at this checkout before pasting)
+flocode config preset                       # list all presets
+flocode config preset local-qwen3-4b        # ready-to-paste managed profile
+flocode config preset local-qwen3-30b-a3b   # 30B MoE, needs 32 GB+ RAM
+flocode config preset local-gemma-3n-e2b    # lightest footprint, ~4 GB
+
+# 3. Run — flocode auto-starts this server on demand
+flocode run --model local-qwen3-4b --prompt 'hello'
+```
+
+### Lifecycle choices
+
+flocode supports two patterns:
+
+- **Flocode-managed** (every shipped preset): flocode spawns and supervises
+  `micromodel-ship serve`, generates a fresh bearer token per start, and
+  writes pid+start-time+cmdline to `$XDG_STATE_HOME/flocode/localmodel/`.
+  `flocode localmodel {start,stop,status,logs}` are the control surface.
+
+- **External**: run `uv run micromodel-ship serve` yourself (e.g. in tmux)
+  and point flocode at `http://127.0.0.1:8051/v1` as a plain remote profile.
+  Use the `local-qwen3-4b-external` preset in flocode for this shape.
+
+### What the server exposes
+
+| Path | Auth | Purpose |
+|---|---|---|
+| `GET /healthz` | public | `{"status":"warming"\|"ready"\|"error"}` — supervisors poll this through cold start |
+| `GET /v1/models` | public | OpenAI-compatible model list |
+| `GET /metrics` | bearer | last completion stats |
+| `POST /v1/chat/completions` | bearer | OpenAI chat completions, supports `stream: true` SSE |
+
+### Supported models
+
+Run `uv run micromodel-ship capabilities` to see what this build ships.
+Current entries live in
+[`micromodel_ship/registry.py`](micromodel_ship/registry.py); today that's
+Qwen3-4B (DFlash) and Gemma 3n E2B + Qwen3-30B-A3B Instruct (plain MLX).
+Add more by appending to `MODELS` and the matching `capabilities.json`
+entry — the test suite enforces that the two stay in sync.
+
 ## Distribution
 
 The offline tarball (`dist/micromodel-ship-offline.tar.gz`, ~7GB) is too large
