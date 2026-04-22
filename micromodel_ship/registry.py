@@ -91,6 +91,35 @@ MODELS: dict[str, ModelEntry] = {
             "bit-width variant (6-bit or 8-bit) if your Mac has the RAM."
         ),
     ),
+    # Qwen3-4B abliterated at 4-bit — safety-refusal direction ablated using
+    # the Arditi et al. 2024 method ("Refusal in LMs is Mediated by a Single
+    # Direction"). Direction was extracted from the residual stream on a
+    # paired AdvBench + Alpaca prompt set, then orthogonalized into every
+    # matrix that writes to the residual (embed + attn o_proj + MLP
+    # down_proj, per layer). Use for research, red-teaming, or creative
+    # workflows where the aligned model's refusals get in the way.
+    #
+    # IMPORTANT: this checkpoint will produce content its aligned parent
+    # refuses (malware snippets, phishing drafts, etc.). Treat accordingly.
+    "qwen3-4b-abliterated": ModelEntry(
+        id="qwen3-4b-abliterated",
+        display_name="Qwen3-4B abliterated 4-bit (plain MLX)",
+        backend="plain_mlx",
+        target="fabianbaier/Qwen3-4B-abliterated-4bit",
+        draft="",
+        context_tokens=32768,
+        max_output_tokens=4096,
+        approx_ram_gb=4.0,
+        approx_disk_gb=2.5,
+        licenses=("apache-2.0",),
+        notes=(
+            "Refusal-direction abliterated via Arditi et al. 2024. Plain MLX "
+            "— no DFlash draft (orthogonalization breaks exact speculative "
+            "match with the aligned draft). Generates content the aligned "
+            "model refuses; do not expose without access controls. See the "
+            "Abliteration section of README.md."
+        ),
+    ),
 }
 
 DEFAULT_MODEL_ID = "qwen3-4b-dflash"
