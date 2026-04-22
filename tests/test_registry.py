@@ -43,6 +43,22 @@ def test_qwen3_30b_a3b_instruct_entry() -> None:
     assert "apache-2.0" in entry.licenses
 
 
+def test_qwen3_4b_abliterated_entry() -> None:
+    """Validate the abliterated Qwen3-4B entry. The HF target repo ID is
+    load-bearing: the companion flocode preset resolves against it, and the
+    abliteration pipeline in flo/abliteration publishes to this exact name.
+    If you change it, update both in the same PR."""
+    entry = registry.get("qwen3-4b-abliterated")
+    assert entry.backend == "plain_mlx"
+    assert entry.target == "fabianbaier/Qwen3-4B-abliterated-4bit"
+    assert entry.draft == "", "abliterated entry should have no DFlash draft"
+    assert entry.context_tokens == 32768
+    assert "apache-2.0" in entry.licenses
+    # Safety-relevant metadata must be present so operators immediately see
+    # this is not a drop-in safe replacement for qwen3-4b-dflash.
+    assert "abliterat" in entry.notes.lower() or "refusal" in entry.notes.lower()
+
+
 def test_unknown_id_raises() -> None:
     with pytest.raises(KeyError, match="unknown model id"):
         registry.get("does-not-exist")

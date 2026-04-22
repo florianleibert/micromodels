@@ -54,6 +54,19 @@
       "approx_ram_gb": 20,
       "approx_disk_gb": 18,
       "notes": "MoE (3B active). Plain MLX. No DFlash speedup. Best for quality over decode speed. Use --target-model to swap bit-widths."
+    },
+    {
+      "id": "micromodel-qwen3-4b-abliterated",
+      "display_name": "Qwen3-4B abliterated 4-bit (plain MLX)",
+      "backend": "plain_mlx",
+      "target": "fabianbaier/Qwen3-4B-abliterated-4bit",
+      "draft": null,
+      "context_tokens": 32768,
+      "architecture": "apple_silicon_mlx",
+      "licenses": ["apache-2.0"],
+      "approx_ram_gb": 4,
+      "approx_disk_gb": 2.5,
+      "notes": "Refusal-direction abliterated (Arditi et al. 2024). Plain MLX. Produces content the aligned model refuses. Research and red-teaming only — do not expose without access controls."
     }
   ]
 }
