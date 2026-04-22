@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 
+from .auth import parse_bind
 from .config import (
+    CAPABILITIES_PATH,
     DEFAULT_DRAFT_REPO,
     DEFAULT_HOST,
     DEFAULT_MAX_NEW_TOKENS,
@@ -17,7 +19,14 @@ from .config import (
     bundled_model_spec,
 )
 from .runtime import GenerationRequest, ModelRuntime, prefetch_models
-from .server import MicroModelServer
+from .server import MicroModelServer, token_from_env
+
+
+def _parse_bind(value: str) -> tuple[str, int]:
+    try:
+        return parse_bind(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -32,6 +41,8 @@ def build_parser() -> argparse.ArgumentParser:
     paths.add_argument("--target-model", default=None)
     paths.add_argument("--draft-model", default=None)
 
+    sub.add_parser("capabilities", help="Print the capabilities.json manifest.")
+
     run = sub.add_parser("run", help="Run one prompt locally.")
     run.add_argument("--prompt", required=True)
     run.add_argument("--target-model", default=None)
@@ -43,6 +54,11 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--seed", type=int, default=DEFAULT_SEED)
     run.add_argument("--profile", action="store_true")
     run.add_argument("--json", action="store_true")
+    run.add_argument(
+        "--no-hf-fallback",
+        action="store_true",
+        help="Fail if bundled target/draft directories are missing instead of pulling from Hugging Face.",
+    )
 
     chat = sub.add_parser("chat", help="Interactive chat loop.")
     chat.add_argument("--target-model", default=None)
@@ -56,12 +72,45 @@ def build_parser() -> argparse.ArgumentParser:
     serve = sub.add_parser("serve", help="Serve a minimal OpenAI-compatible chat endpoint.")
     serve.add_argument("--host", default=DEFAULT_HOST)
     serve.add_argument("--port", type=int, default=DEFAULT_PORT)
+    serve.add_argument(
+        "--bind",
+        type=_parse_bind,
+        default=None,
+        help="Shorthand for --host/--port, e.g. 127.0.0.1:8051. Overrides --host/--port.",
+    )
     serve.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
     serve.add_argument("--target-model", default=None)
     serve.add_argument("--draft-model", default=None)
     serve.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    serve.add_argument(
+        "--token",
+        default=None,
+        help=(
+            "Bearer token required on /v1/chat/completions and /metrics. "
+            "If omitted, falls back to $FLOCODE_SERVE_TOKEN. Empty disables auth."
+        ),
+    )
+    serve.add_argument(
+        "--no-hf-fallback",
+        action="store_true",
+        help="Fail if bundled target/draft directories are missing instead of pulling from Hugging Face.",
+    )
 
     return parser
+
+
+def _ensure_local_paths(target_override: str | None, draft_override: str | None) -> None:
+    spec = bundled_model_spec(target_override, draft_override)
+    if not spec.target_is_local:
+        raise SystemExit(
+            f"refusing to fall back to Hugging Face: target not local ({spec.target}). "
+            f"Run `micromodel-ship prefetch` or pass explicit --target-model / --draft-model."
+        )
+    if not spec.draft_is_local:
+        raise SystemExit(
+            f"refusing to fall back to Hugging Face: draft not local ({spec.draft}). "
+            f"Run `micromodel-ship prefetch` or pass explicit --target-model / --draft-model."
+        )
 
 
 def cmd_prefetch(args: argparse.Namespace) -> int:
@@ -84,7 +133,16 @@ def cmd_paths(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_capabilities(_args: argparse.Namespace) -> int:
+    if not CAPABILITIES_PATH.exists():
+        raise SystemExit(f"capabilities.json not found at {CAPABILITIES_PATH}")
+    print(CAPABILITIES_PATH.read_text(encoding="utf-8"), end="")
+    return 0
+
+
 def cmd_run(args: argparse.Namespace) -> int:
+    if args.no_hf_fallback:
+        _ensure_local_paths(args.target_model, args.draft_model)
     runtime = ModelRuntime(args.target_model, args.draft_model, seed=args.seed)
     result = runtime.generate(
         GenerationRequest(
@@ -158,13 +216,19 @@ def cmd_chat(args: argparse.Namespace) -> int:
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
+    if args.no_hf_fallback:
+        _ensure_local_paths(args.target_model, args.draft_model)
+    host = args.host
+    port = args.port
+    if args.bind is not None:
+        host, port = args.bind
     runtime = ModelRuntime(args.target_model, args.draft_model, seed=args.seed)
-    runtime.warm()
     server = MicroModelServer(
         runtime=runtime,
-        host=args.host,
-        port=args.port,
+        host=host,
+        port=port,
         model_name=args.model_name,
+        server_token=token_from_env(args.token),
     )
     server.serve_forever()
     return 0
@@ -177,6 +241,8 @@ def main() -> None:
         raise SystemExit(cmd_prefetch(args))
     if args.command == "paths":
         raise SystemExit(cmd_paths(args))
+    if args.command == "capabilities":
+        raise SystemExit(cmd_capabilities(args))
     if args.command == "run":
         raise SystemExit(cmd_run(args))
     if args.command == "chat":

@@ -13,8 +13,16 @@ dependencies = [
     "huggingface-hub>=1.0.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
 [project.scripts]
 micromodel-ship = "micromodel_ship.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["micromodel_ship*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

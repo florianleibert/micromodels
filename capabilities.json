@@ -1,0 +1,33 @@
+{
+  "schema_version": "1",
+  "server": {
+    "api": "openai-chat-completions-subset",
+    "supports_streaming": true,
+    "supports_tools": false,
+    "supports_system_role": true,
+    "auth": {
+      "bearer_token_env": "FLOCODE_SERVE_TOKEN",
+      "optional": true
+    },
+    "endpoints": {
+      "public": ["/healthz", "/v1/models"],
+      "authed": ["/metrics", "/v1/chat/completions"]
+    }
+  },
+  "models": [
+    {
+      "id": "micromodel-qwen3-4b-dflash",
+      "display_name": "Qwen3-4B DFlash (MLX)",
+      "backend": "dflash",
+      "target": "mlx-community/Qwen3-4B-bf16",
+      "draft": "z-lab/Qwen3-4B-DFlash-b16",
+      "verifier_mode": "parallel-replay",
+      "context_tokens": 32768,
+      "architecture": "apple_silicon_mlx",
+      "licenses": ["apache-2.0"],
+      "approx_ram_gb": 10,
+      "approx_disk_gb": 18,
+      "notes": "Exact speculative decoding. No tool calls. No prefix cache."
+    }
+  ]
+}
