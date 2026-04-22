@@ -31,6 +31,18 @@ def test_plain_mlx_entry_has_no_draft() -> None:
     assert entry.draft == "", "plain-MLX entries must leave draft empty"
 
 
+def test_qwen3_30b_a3b_instruct_entry() -> None:
+    """Validate the Qwen3-30B MoE entry. Load-bearing for flocode's preset:
+    if the HF repo ID changes, the corresponding `local-qwen3-30b-a3b`
+    preset in openflo will silently point at nothing useful."""
+    entry = registry.get("qwen3-30b-a3b-instruct")
+    assert entry.backend == "plain_mlx"
+    assert entry.target == "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit"
+    assert entry.draft == ""
+    assert entry.context_tokens == 131072
+    assert "apache-2.0" in entry.licenses
+
+
 def test_unknown_id_raises() -> None:
     with pytest.raises(KeyError, match="unknown model id"):
         registry.get("does-not-exist")

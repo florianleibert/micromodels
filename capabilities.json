@@ -41,6 +41,19 @@
       "approx_ram_gb": 4,
       "approx_disk_gb": 10,
       "notes": "Plain MLX. No DFlash speedup. Use --target-model to substitute a 4-bit quant for lighter RAM."
+    },
+    {
+      "id": "micromodel-qwen3-30b-a3b-instruct",
+      "display_name": "Qwen3-30B-A3B Instruct 4-bit (MoE, plain MLX)",
+      "backend": "plain_mlx",
+      "target": "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+      "draft": null,
+      "context_tokens": 131072,
+      "architecture": "apple_silicon_mlx",
+      "licenses": ["apache-2.0"],
+      "approx_ram_gb": 20,
+      "approx_disk_gb": 18,
+      "notes": "MoE (3B active). Plain MLX. No DFlash speedup. Best for quality over decode speed. Use --target-model to swap bit-widths."
     }
   ]
 }
