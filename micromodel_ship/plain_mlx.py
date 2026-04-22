@@ -139,7 +139,12 @@ class PlainMLXRuntime:
                 prompt=request.prompt,
                 max_tokens=request.max_new_tokens,
             ):
-                text = getattr(chunk, "text", None) or str(chunk)
+                # mlx_lm yields GenerationResponse objects. Grab the .text
+                # field only — never fall back to str(chunk), which returns
+                # the dataclass repr (``GenerationResponse(text='', token=...)``)
+                # and would leak as a "delta" on the EOS chunk where text is
+                # the empty string.
+                text = getattr(chunk, "text", "") or ""
                 if text:
                     output_text += text
                     output_tokens += 1
