@@ -59,6 +59,7 @@ class MicroModelServer:
         self._ready = threading.Event()
         self._warm_error: BaseException | None = None
         self._httpd: ThreadingHTTPServer | None = None
+        self._warm_thread: threading.Thread | None = None
 
     def _warm(self) -> None:
         try:
@@ -71,8 +72,44 @@ class MicroModelServer:
     def _check_auth(self, header_value: str | None) -> bool:
         return check_bearer(self.server_token, header_value)
 
+    def start(self) -> tuple[str, int]:
+        """Bind the HTTP socket and start warmup; return the bound (host, port).
+
+        Safe to call from tests: pair with ``wait()`` (blocking) or let the
+        caller run ``self._httpd.serve_forever()`` on a thread and ``stop()``
+        to shut it down.
+        """
+        self._build_httpd()
+        assert self._httpd is not None
+        warm_thread = threading.Thread(target=self._warm, name="micromodel-warm", daemon=True)
+        warm_thread.start()
+        self._warm_thread = warm_thread
+        return self._httpd.server_address[0], self._httpd.server_address[1]
+
+    def wait(self) -> None:
+        """Serve requests until ``stop()`` is called."""
+        if self._httpd is None:
+            raise RuntimeError("start() must be called before wait()")
+        try:
+            self._httpd.serve_forever()
+        finally:
+            self._httpd.server_close()
+
+    def stop(self) -> None:
+        if self._httpd is not None:
+            self._httpd.shutdown()
+
     def serve_forever(self) -> None:
         """Bind, start warmup in the background, serve until shutdown."""
+        host, port = self.start()
+        auth_mode = "bearer" if self.server_token else "none"
+        print(f"[micromodel-ship] bound http://{host}:{port} auth={auth_mode}")
+        print(f"[micromodel-ship] model={self.model_name} target={self.runtime.spec.target}")
+        print(f"[micromodel-ship] draft={self.runtime.spec.draft}")
+        print("[micromodel-ship] warming up in background; /healthz reports status")
+        self.wait()
+
+    def _build_httpd(self) -> None:
         server = self
         model_name = self.model_name
         runtime = self.runtime
@@ -381,19 +418,7 @@ class MicroModelServer:
             def log_message(self, format: str, *args: Any) -> None:
                 return
 
-        httpd = ThreadingHTTPServer((self.host, self.port), Handler)
-        self._httpd = httpd
-        auth_mode = "bearer" if self.server_token else "none"
-        print(f"[micromodel-ship] bound http://{self.host}:{self.port} auth={auth_mode}")
-        print(f"[micromodel-ship] model={model_name} target={runtime.spec.target}")
-        print(f"[micromodel-ship] draft={runtime.spec.draft}")
-        print("[micromodel-ship] warming up in background; /healthz reports status")
-        warm_thread = threading.Thread(target=self._warm, name="micromodel-warm", daemon=True)
-        warm_thread.start()
-        try:
-            httpd.serve_forever()
-        finally:
-            httpd.server_close()
+        self._httpd = ThreadingHTTPServer((self.host, self.port), Handler)
 
 
 def token_from_env(explicit: str | None = None) -> str | None:
