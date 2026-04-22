@@ -28,6 +28,19 @@
       "approx_ram_gb": 10,
       "approx_disk_gb": 18,
       "notes": "Exact speculative decoding. No tool calls. No prefix cache."
+    },
+    {
+      "id": "micromodel-gemma-3n-e2b",
+      "display_name": "Gemma 3n E2B (plain MLX)",
+      "backend": "plain_mlx",
+      "target": "mlx-community/gemma-3n-E2B-it-bf16",
+      "draft": null,
+      "context_tokens": 32768,
+      "architecture": "apple_silicon_mlx",
+      "licenses": ["gemma"],
+      "approx_ram_gb": 4,
+      "approx_disk_gb": 10,
+      "notes": "Plain MLX. No DFlash speedup. Use --target-model to substitute a 4-bit quant for lighter RAM."
     }
   ]
 }

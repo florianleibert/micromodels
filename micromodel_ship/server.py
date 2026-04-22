@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import socket
+import socketserver
+import stat
 import threading
 import time
 import uuid
@@ -19,6 +22,48 @@ from .config import (
     SERVE_TOKEN_ENV,
 )
 from .runtime import GenerationRequest, ModelRuntime, build_chat_prompt_from_messages
+
+
+class _ThreadingUnixHTTPServer(socketserver.ThreadingUnixStreamServer):
+    """Unix-socket variant of ThreadingHTTPServer.
+
+    Inherits threading + AF_UNIX binding. The handler is the same HTTP
+    handler used for TCP; only the socket family differs. Socket permissions
+    are set to 0600 after bind so only the owning user can connect, which
+    lets us skip bearer-auth when a token is not explicitly configured.
+    """
+
+    allow_reuse_address = True
+
+    def __init__(self, socket_path: str, HandlerClass):
+        # Set _socket_path BEFORE super().__init__ in case init calls
+        # server_close on an error path (socketserver does this).
+        self._socket_path = socket_path
+        # Remove a stale socket file at the target path. Not racing: the
+        # supervisor (flocode) prevents concurrent starts for the same
+        # profile, and a leftover file from a crashed previous run is
+        # ours to clean up.
+        try:
+            if os.path.exists(socket_path):
+                os.unlink(socket_path)
+        except OSError:
+            pass
+        # Strip group/other perms before bind so the socket inode is not
+        # world-accessible during the (very short) window between bind and
+        # the explicit chmod below.
+        old_umask = os.umask(0o077)
+        try:
+            super().__init__(socket_path, HandlerClass)
+        finally:
+            os.umask(old_umask)
+        os.chmod(socket_path, 0o600)
+
+    def server_close(self) -> None:
+        super().server_close()
+        try:
+            os.unlink(self._socket_path)
+        except OSError:
+            pass
 
 # Public (unauthenticated) endpoints. Everything else requires bearer auth when
 # a token is configured. Kept narrow so supervisors can poll health/metadata
@@ -50,15 +95,22 @@ class MicroModelServer:
         port: int = DEFAULT_PORT,
         model_name: str = DEFAULT_MODEL_NAME,
         server_token: str | None = None,
+        unix_socket_path: str | None = None,
     ) -> None:
         self.runtime = runtime
         self.host = host
         self.port = port
         self.model_name = model_name
         self.server_token = server_token or ""
+        # unix_socket_path, when set, switches the server to AF_UNIX. Host
+        # and port are ignored in that case. The socket file is created with
+        # 0600 perms so only the same-user process tree can connect; this
+        # is the primary reason to prefer UDS over loopback TCP on a shared
+        # machine.
+        self.unix_socket_path = unix_socket_path
         self._ready = threading.Event()
         self._warm_error: BaseException | None = None
-        self._httpd: ThreadingHTTPServer | None = None
+        self._httpd: socketserver.BaseServer | None = None
         self._warm_thread: threading.Thread | None = None
 
     def _warm(self) -> None:
@@ -75,6 +127,9 @@ class MicroModelServer:
     def start(self) -> tuple[str, int]:
         """Bind the HTTP socket and start warmup; return the bound (host, port).
 
+        For Unix sockets, returns (socket_path, 0) so callers can still
+        destructure a two-tuple uniformly.
+
         Safe to call from tests: pair with ``wait()`` (blocking) or let the
         caller run ``self._httpd.serve_forever()`` on a thread and ``stop()``
         to shut it down.
@@ -84,7 +139,10 @@ class MicroModelServer:
         warm_thread = threading.Thread(target=self._warm, name="micromodel-warm", daemon=True)
         warm_thread.start()
         self._warm_thread = warm_thread
-        return self._httpd.server_address[0], self._httpd.server_address[1]
+        addr = self._httpd.server_address
+        if isinstance(addr, str):
+            return addr, 0
+        return addr[0], addr[1]
 
     def wait(self) -> None:
         """Serve requests until ``stop()`` is called."""
@@ -101,9 +159,12 @@ class MicroModelServer:
 
     def serve_forever(self) -> None:
         """Bind, start warmup in the background, serve until shutdown."""
-        host, port = self.start()
+        addr0, addr1 = self.start()
         auth_mode = "bearer" if self.server_token else "none"
-        print(f"[micromodel-ship] bound http://{host}:{port} auth={auth_mode}")
+        if self.unix_socket_path:
+            print(f"[micromodel-ship] bound unix://{addr0} auth={auth_mode} (perms 0600)")
+        else:
+            print(f"[micromodel-ship] bound http://{addr0}:{addr1} auth={auth_mode}")
         print(f"[micromodel-ship] model={self.model_name} target={self.runtime.spec.target}")
         print(f"[micromodel-ship] draft={self.runtime.spec.draft}")
         print("[micromodel-ship] warming up in background; /healthz reports status")
@@ -418,7 +479,10 @@ class MicroModelServer:
             def log_message(self, format: str, *args: Any) -> None:
                 return
 
-        self._httpd = ThreadingHTTPServer((self.host, self.port), Handler)
+        if self.unix_socket_path:
+            self._httpd = _ThreadingUnixHTTPServer(self.unix_socket_path, Handler)
+        else:
+            self._httpd = ThreadingHTTPServer((self.host, self.port), Handler)
 
 
 def token_from_env(explicit: str | None = None) -> str | None:
