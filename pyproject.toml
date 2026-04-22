@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "micromodel-ship"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shippable local Qwen3-4B DFlash runtime for Apple Silicon"
 readme = "README.md"
 requires-python = ">=3.11"
