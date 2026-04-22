@@ -68,6 +68,29 @@ MODELS: dict[str, ModelEntry] = {
             "a different Gemma MLX conversion (e.g. a 4-bit quant)."
         ),
     ),
+    # Qwen3-30B-A3B Instruct (2507) at 4-bit — MoE with 3B active params.
+    # Plain MLX for now; no DFlash draft exists for this size on Apple
+    # Silicon yet. Sized to fit a 32 GB+ M-series Mac (peak memory around
+    # 18–22 GB under generation). The "2507" tag is Qwen's July 2025
+    # instruct refresh and is the recommended chat checkpoint.
+    "qwen3-30b-a3b-instruct": ModelEntry(
+        id="qwen3-30b-a3b-instruct",
+        display_name="Qwen3-30B-A3B Instruct 4-bit (MoE, plain MLX)",
+        backend="plain_mlx",
+        target="mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit",
+        draft="",
+        context_tokens=131072,
+        max_output_tokens=8192,
+        approx_ram_gb=20.0,
+        approx_disk_gb=18.0,
+        licenses=("apache-2.0",),
+        notes=(
+            "MoE with 3B active params. Plain MLX — no DFlash speedup. "
+            "Pick this over qwen3-4b-dflash when model quality matters more "
+            "than decode speed. Use --target-model to substitute a higher "
+            "bit-width variant (6-bit or 8-bit) if your Mac has the RAM."
+        ),
+    ),
 }
 
 DEFAULT_MODEL_ID = "qwen3-4b-dflash"
