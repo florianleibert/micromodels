@@ -47,10 +47,13 @@ git init
 git add .gitattributes
 git add .
 git commit -m "Initial micromodel-ship release"
-git branch -M main
+git branch -M master
 git remote add origin <your-github-url>
-git push -u origin main
+git push -u origin master
 ```
+
+> The shipped repo uses `master` as the default branch; substitute `main` above
+> if your fork uses the newer convention.
 
 ## What is actually being published
 

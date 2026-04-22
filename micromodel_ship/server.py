@@ -1,38 +1,179 @@
 from __future__ import annotations
 
 import json
+import os
+import socket
+import socketserver
+import stat
+import threading
 import time
 import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
+from .auth import check_bearer
 from .config import (
     DEFAULT_HOST,
     DEFAULT_MAX_NEW_TOKENS,
     DEFAULT_MODEL_NAME,
     DEFAULT_PORT,
     DEFAULT_TEMPERATURE,
+    SERVE_TOKEN_ENV,
 )
 from .runtime import GenerationRequest, ModelRuntime, build_chat_prompt_from_messages
 
 
+class _ThreadingUnixHTTPServer(socketserver.ThreadingUnixStreamServer):
+    """Unix-socket variant of ThreadingHTTPServer.
+
+    Inherits threading + AF_UNIX binding. The handler is the same HTTP
+    handler used for TCP; only the socket family differs. Socket permissions
+    are set to 0600 after bind so only the owning user can connect, which
+    lets us skip bearer-auth when a token is not explicitly configured.
+    """
+
+    allow_reuse_address = True
+
+    def __init__(self, socket_path: str, HandlerClass):
+        # Set _socket_path BEFORE super().__init__ in case init calls
+        # server_close on an error path (socketserver does this).
+        self._socket_path = socket_path
+        # Remove a stale socket file at the target path. Not racing: the
+        # supervisor (flocode) prevents concurrent starts for the same
+        # profile, and a leftover file from a crashed previous run is
+        # ours to clean up.
+        try:
+            if os.path.exists(socket_path):
+                os.unlink(socket_path)
+        except OSError:
+            pass
+        # Strip group/other perms before bind so the socket inode is not
+        # world-accessible during the (very short) window between bind and
+        # the explicit chmod below.
+        old_umask = os.umask(0o077)
+        try:
+            super().__init__(socket_path, HandlerClass)
+        finally:
+            os.umask(old_umask)
+        os.chmod(socket_path, 0o600)
+
+    def server_close(self) -> None:
+        super().server_close()
+        try:
+            os.unlink(self._socket_path)
+        except OSError:
+            pass
+
+# Public (unauthenticated) endpoints. Everything else requires bearer auth when
+# a token is configured. Kept narrow so supervisors can poll health/metadata
+# without embedding the secret, while prompts and completion metrics stay gated.
+PUBLIC_PATHS: frozenset[str] = frozenset({"/healthz", "/v1/models"})
+
+
 class MicroModelServer:
+    """Minimal OpenAI-compatible chat server.
+
+    Binds the HTTP socket *before* warming the model so that supervisors can
+    poll ``/healthz`` immediately and distinguish "still warming" from "dead".
+    Warmup runs on a background thread and flips the ready flag when done; any
+    attempt to generate before then returns 503.
+
+    If ``server_token`` is non-empty, authenticated endpoints require a
+    ``Authorization: Bearer <token>`` header (constant-time compared).
+
+    TODO(unix-socket): Phase 2 should add AF_UNIX binding so the socket
+    filesystem permissions gate access, rendering the bearer token redundant
+    on single-user machines. Requires ThreadingUnixStreamServer + a client
+    that can dial a unix socket (flocode's OpenAI provider does not yet).
+    """
+
     def __init__(
         self,
         runtime: ModelRuntime,
         host: str = DEFAULT_HOST,
         port: int = DEFAULT_PORT,
         model_name: str = DEFAULT_MODEL_NAME,
+        server_token: str | None = None,
+        unix_socket_path: str | None = None,
     ) -> None:
         self.runtime = runtime
         self.host = host
         self.port = port
         self.model_name = model_name
+        self.server_token = server_token or ""
+        # unix_socket_path, when set, switches the server to AF_UNIX. Host
+        # and port are ignored in that case. The socket file is created with
+        # 0600 perms so only the same-user process tree can connect; this
+        # is the primary reason to prefer UDS over loopback TCP on a shared
+        # machine.
+        self.unix_socket_path = unix_socket_path
+        self._ready = threading.Event()
+        self._warm_error: BaseException | None = None
+        self._httpd: socketserver.BaseServer | None = None
+        self._warm_thread: threading.Thread | None = None
+
+    def _warm(self) -> None:
+        try:
+            self.runtime.warm()
+        except BaseException as exc:
+            self._warm_error = exc
+            return
+        self._ready.set()
+
+    def _check_auth(self, header_value: str | None) -> bool:
+        return check_bearer(self.server_token, header_value)
+
+    def start(self) -> tuple[str, int]:
+        """Bind the HTTP socket and start warmup; return the bound (host, port).
+
+        For Unix sockets, returns (socket_path, 0) so callers can still
+        destructure a two-tuple uniformly.
+
+        Safe to call from tests: pair with ``wait()`` (blocking) or let the
+        caller run ``self._httpd.serve_forever()`` on a thread and ``stop()``
+        to shut it down.
+        """
+        self._build_httpd()
+        assert self._httpd is not None
+        warm_thread = threading.Thread(target=self._warm, name="micromodel-warm", daemon=True)
+        warm_thread.start()
+        self._warm_thread = warm_thread
+        addr = self._httpd.server_address
+        if isinstance(addr, str):
+            return addr, 0
+        return addr[0], addr[1]
+
+    def wait(self) -> None:
+        """Serve requests until ``stop()`` is called."""
+        if self._httpd is None:
+            raise RuntimeError("start() must be called before wait()")
+        try:
+            self._httpd.serve_forever()
+        finally:
+            self._httpd.server_close()
+
+    def stop(self) -> None:
+        if self._httpd is not None:
+            self._httpd.shutdown()
 
     def serve_forever(self) -> None:
-        runtime = self.runtime
+        """Bind, start warmup in the background, serve until shutdown."""
+        addr0, addr1 = self.start()
+        auth_mode = "bearer" if self.server_token else "none"
+        if self.unix_socket_path:
+            print(f"[micromodel-ship] bound unix://{addr0} auth={auth_mode} (perms 0600)")
+        else:
+            print(f"[micromodel-ship] bound http://{addr0}:{addr1} auth={auth_mode}")
+        print(f"[micromodel-ship] model={self.model_name} target={self.runtime.spec.target}")
+        print(f"[micromodel-ship] draft={self.runtime.spec.draft}")
+        print("[micromodel-ship] warming up in background; /healthz reports status")
+        self.wait()
+
+    def _build_httpd(self) -> None:
+        server = self
         model_name = self.model_name
+        runtime = self.runtime
         server_state: dict[str, Any] = {"last_completion": None}
 
         class Handler(BaseHTTPRequestHandler):
@@ -46,23 +187,67 @@ class MicroModelServer:
                 self.end_headers()
                 self.wfile.write(raw)
 
-            def do_GET(self) -> None:
-                if self.path == "/healthz":
-                    self._send_json(
-                        HTTPStatus.OK,
+            def _unauthorized(self) -> None:
+                self.send_response(HTTPStatus.UNAUTHORIZED)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("WWW-Authenticate", 'Bearer realm="micromodel-ship"')
+                body = json.dumps({"error": {"message": "unauthorized"}}).encode("utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def _require_auth(self) -> bool:
+                if self.path in PUBLIC_PATHS:
+                    return True
+                if server._check_auth(self.headers.get("Authorization")):
+                    return True
+                self._unauthorized()
+                return False
+
+            def _healthz_payload(self) -> tuple[int, dict[str, Any]]:
+                if server._warm_error is not None:
+                    return (
+                        HTTPStatus.SERVICE_UNAVAILABLE,
                         {
-                            "ok": True,
+                            "ok": False,
+                            "status": "error",
+                            "error": str(server._warm_error),
                             "model": model_name,
-                            "target": runtime.spec.target,
-                            "draft": runtime.spec.draft,
                         },
                     )
+                if not server._ready.is_set():
+                    return (
+                        HTTPStatus.SERVICE_UNAVAILABLE,
+                        {
+                            "ok": False,
+                            "status": "warming",
+                            "model": model_name,
+                        },
+                    )
+                return (
+                    HTTPStatus.OK,
+                    {
+                        "ok": True,
+                        "status": "ready",
+                        "model": model_name,
+                        "target": runtime.spec.target,
+                        "draft": runtime.spec.draft,
+                    },
+                )
+
+            def do_GET(self) -> None:
+                if not self._require_auth():
+                    return
+                if self.path == "/healthz":
+                    status, payload = self._healthz_payload()
+                    self._send_json(status, payload)
                     return
                 if self.path == "/metrics":
                     self._send_json(
                         HTTPStatus.OK,
                         {
-                            "ok": True,
+                            "ok": server._ready.is_set(),
+                            "status": "ready" if server._ready.is_set() else "warming",
                             "model": model_name,
                             "target": runtime.spec.target,
                             "draft": runtime.spec.draft,
@@ -88,8 +273,17 @@ class MicroModelServer:
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": {"message": "not found"}})
 
             def do_POST(self) -> None:
+                if not self._require_auth():
+                    return
                 if self.path != "/v1/chat/completions":
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": {"message": "not found"}})
+                    return
+                if not server._ready.is_set():
+                    status = HTTPStatus.SERVICE_UNAVAILABLE
+                    if server._warm_error is not None:
+                        self._send_json(status, {"error": {"message": f"warmup failed: {server._warm_error}"}})
+                    else:
+                        self._send_json(status, {"error": {"message": "model warming, retry shortly"}})
                     return
                 try:
                     content_length = int(self.headers.get("Content-Length", "0"))
@@ -285,8 +479,14 @@ class MicroModelServer:
             def log_message(self, format: str, *args: Any) -> None:
                 return
 
-        httpd = ThreadingHTTPServer((self.host, self.port), Handler)
-        print(f"[micromodel-ship] serving {model_name} on http://{self.host}:{self.port}")
-        print(f"[micromodel-ship] target={runtime.spec.target}")
-        print(f"[micromodel-ship] draft={runtime.spec.draft}")
-        httpd.serve_forever()
+        if self.unix_socket_path:
+            self._httpd = _ThreadingUnixHTTPServer(self.unix_socket_path, Handler)
+        else:
+            self._httpd = ThreadingHTTPServer((self.host, self.port), Handler)
+
+
+def token_from_env(explicit: str | None = None) -> str | None:
+    """Read the bearer token from env or the explicit arg. Empty = no auth."""
+    if explicit is not None:
+        return explicit or None
+    return os.environ.get(SERVE_TOKEN_ENV) or None

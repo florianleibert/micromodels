@@ -185,6 +185,26 @@ Notes:
 - the API is intentionally minimal
 - the server runs a single in-process model instance
 - generation is serialized through that instance for correctness and simplicity
+- HTTP binds before the model warms; `/healthz` returns `503 {"status":"warming"}`
+  until the model is loaded, then `200 {"status":"ready"}`. `/v1/chat/completions`
+  returns 503 until warmup completes
+
+### Auth and bind
+
+By default the server is unauthenticated and binds `127.0.0.1:8051`. To require
+a bearer token on `/v1/chat/completions` and `/metrics` (public endpoints
+`/healthz` and `/v1/models` stay open for supervisor probes):
+
+```bash
+export FLOCODE_SERVE_TOKEN=$(openssl rand -hex 32)
+./scripts/serve.sh
+# or:
+uv run micromodel-ship serve --bind 127.0.0.1:8051 --no-hf-fallback
+```
+
+Pass the token via `Authorization: Bearer <token>`. An empty token (unset env)
+disables auth entirely. See [capabilities.json](capabilities.json) for the
+machine-readable manifest consumed by flocode.
 
 ## Distribution
 
