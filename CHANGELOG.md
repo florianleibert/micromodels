@@ -10,7 +10,7 @@
 
 - `scripts/package.sh` now enforces the self-contained Hydra runtime contract:
   release archives must include a ready `.venv/bin/micromodel-ship`, bundled
-  model payloads, and `checksums.txt`.
+  model payloads, `checksums.txt`, and `release-manifest.json`.
 
 ## 0.2.0 — 2026-04-22
 
