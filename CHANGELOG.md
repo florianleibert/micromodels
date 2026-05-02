@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Package `__version__` now matches `pyproject.toml` at `0.2.0`.
+
+### Changed
+
+- `scripts/package.sh` now enforces the self-contained Hydra runtime contract:
+  release archives must include a ready `.venv/bin/micromodel-ship`, bundled
+  model payloads, and `checksums.txt`.
+
 ## 0.2.0 — 2026-04-22
 
 Server-side half of the flocode local-model integration. Companion to
