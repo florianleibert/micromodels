@@ -78,6 +78,13 @@ Release artifacts:
 - `dist/micromodel-ship-<version>-<platform>.tar.gz`
 - `dist/micromodel-ship-offline.tar.gz` compatibility copy
 - `dist/checksums.txt`
+- `dist/release-manifest.json`
+
+`release-manifest.json` is consumed by the OpenFlo suite-manifest assembler. It
+records the versioned platform archive, source commit, SHA-256, size, content
+type, and build timestamp. The legacy compatibility archive remains in
+`checksums.txt` but is not listed as a suite artifact because the suite lockfile
+expects one active artifact per component platform.
 
 ## Notes
 
