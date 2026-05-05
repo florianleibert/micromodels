@@ -16,6 +16,15 @@ uv sync --frozen
 ./scripts/package.sh
 ```
 
+For a train release, pass the exact release tag/version so the archive name and
+`release-manifest.json` line up with the GitHub Release:
+
+```bash
+uv sync --frozen
+./scripts/prefetch.sh
+./scripts/build-release.sh v0.2.1-alpha.2
+```
+
 Optional local sanity flow:
 
 ```bash
@@ -85,6 +94,16 @@ records the versioned platform archive, source commit, SHA-256, size, content
 type, and build timestamp. The legacy compatibility archive remains in
 `checksums.txt` but is not listed as a suite artifact because the suite lockfile
 expects one active artifact per component platform.
+
+## GitHub Release workflow
+
+The workflow in `.github/workflows/release.yml` is intentionally bound to a
+self-hosted `macOS`, `ARM64`, `micromodel-release` runner. The managed-runtime
+artifact includes `.venv/` and model weights, so a generic hosted Linux runner
+would produce the wrong platform and an incomplete artifact. Until a prepared
+runner is available, operators can run `scripts/build-release.sh <tag>` locally
+and attach `dist/micromodel-ship-*.tar.gz`, `dist/checksums.txt`, and
+`dist/release-manifest.json` to the release by hand.
 
 ## Notes
 
