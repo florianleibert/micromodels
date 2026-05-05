@@ -3,12 +3,46 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-VERSION="$(python3 - <<'PY'
+usage() {
+  cat <<'USAGE' >&2
+Usage:
+  scripts/package.sh [version-or-tag]
+
+Build a self-contained, platform-specific micromodel-ship archive plus
+checksums.txt and release-manifest.json. The optional version may be a
+SemVer-like release tag such as v0.2.1-alpha.2. When omitted, the project
+version from pyproject.toml is used.
+
+Environment:
+  MICROMODEL_RELEASE_PLATFORM  Override platform, default: <os>-<arch>.
+  MICROMODEL_BUILD_DATE        RFC3339 timestamp for release-manifest.json.
+USAGE
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+if [[ "$#" -gt 1 ]]; then
+  usage
+  exit 1
+fi
+
+if [[ "$#" -eq 1 ]]; then
+  VERSION="${1#v}"
+else
+  VERSION="$(python3 - <<'PY'
 import tomllib
 with open("pyproject.toml", "rb") as f:
     print(tomllib.load(f)["project"]["version"])
 PY
 )"
+fi
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.+][0-9A-Za-z._-]+)?$ ]]; then
+  echo "ERROR: invalid release version '$VERSION'." >&2
+  echo "       expected SemVer-like, e.g. 0.2.1 or 0.2.1-alpha.2" >&2
+  exit 1
+fi
 
 os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 arch="$(uname -m)"

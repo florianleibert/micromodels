@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag/version to release, for example v0.2.1-alpha.2"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  package:
+    name: Prepared-platform runtime archive
+    # The release archive contains .venv/ and model weights, so this cannot be a
+    # generic hosted-runner source build. Operators attach a prepared Apple
+    # Silicon runner for darwin-arm64 alpha artifacts.
+    runs-on: [self-hosted, macOS, ARM64, micromodel-release]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Build release archive
+        env:
+          TAG: ${{ env.RELEASE_TAG }}
+        run: scripts/build-release.sh "$TAG"
+
+      - name: Stage release assets
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          cp dist/micromodel-ship-*.tar.gz \
+             dist/checksums.txt \
+             dist/release-manifest.json \
+             release-assets/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: micromodel-ship-release-assets
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: micromodel-ship ${{ env.RELEASE_TAG }}
+          draft: false
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/micromodel-ship-*.tar.gz
+            release-assets/checksums.txt
+            release-assets/release-manifest.json
