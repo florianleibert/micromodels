@@ -84,7 +84,7 @@ if [[ -n "${MICROMODEL_BUNDLED_PYTHON:-}" ]]; then
 fi
 
 bundled_python=""
-for candidate in "$BUNDLED_PYTHON_DIR/bin/python3" "$BUNDLED_PYTHON_DIR/bin/python"; do
+for candidate in "$BUNDLED_PYTHON_DIR/bin/python3" "$BUNDLED_PYTHON_DIR/bin/python" "$BUNDLED_PYTHON_DIR"/bin/python3.*; do
   if [[ -x "$candidate" ]]; then
     bundled_python="$candidate"
     break
@@ -133,6 +133,14 @@ ROOT="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")/../.." && pwd)"
 PY="\$ROOT/$BUNDLED_PYTHON_DIR/bin/python3"
 if [[ ! -x "\$PY" ]]; then
   PY="\$ROOT/$BUNDLED_PYTHON_DIR/bin/python"
+fi
+if [[ ! -x "\$PY" ]]; then
+  for candidate in "\$ROOT/$BUNDLED_PYTHON_DIR"/bin/python3.*; do
+    if [[ -x "\$candidate" ]]; then
+      PY="\$candidate"
+      break
+    fi
+  done
 fi
 if [[ ! -x "\$PY" ]]; then
   echo "bundled Python runtime missing under \$ROOT/$BUNDLED_PYTHON_DIR" >&2
