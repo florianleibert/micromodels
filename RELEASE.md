@@ -12,18 +12,27 @@ From the repo root:
 ```bash
 cd ~/dev/models/micromodel-ship
 ./scripts/check-no-secrets.sh
-uv sync --frozen
-./scripts/package.sh
+uv python install 3.11
+PYTHON_BIN="$(uv python find 3.11)"
+PYTHON_PREFIX="$(cd "$(dirname "$PYTHON_BIN")/.." && pwd)"
+UV_PROJECT_ENVIRONMENT=.venv uv sync --frozen \
+  --python "$PYTHON_BIN"
 ```
 
 For a train release, pass the exact release tag/version so the archive name and
 `release-manifest.json` line up with the GitHub Release:
 
 ```bash
-uv sync --frozen
 ./scripts/prefetch.sh
-./scripts/build-release.sh v0.2.1-alpha.2
+MICROMODEL_BUNDLED_PYTHON="$PYTHON_PREFIX" \
+  ./scripts/build-release.sh v0.2.1-alpha.2
 ```
+
+`MICROMODEL_BUNDLED_PYTHON` is required. The package script copies that Python
+prefix into `.micromodel-runtime/python` inside the archive and rewrites
+`.venv/bin/micromodel-ship` to a relative launcher. This is the property Hydra
+Desktop depends on: after extraction on a clean Mac, the runtime starts without
+Homebrew Python or `uv`.
 
 Optional local sanity flow:
 
@@ -108,6 +117,7 @@ and attach `dist/micromodel-ship-*.tar.gz`, `dist/checksums.txt`, and
 ## Notes
 
 - There is no single “model binary.” The shipped weights are a directory bundle.
-- The release tarball is platform-specific because it includes `.venv`.
+- The release tarball is platform-specific because it includes `.venv`, model
+  weights, and a bundled Python runtime.
 - If GitHub LFS quotas are a concern, publish a code-only branch and keep the
   offline tarball in releases or private object storage.

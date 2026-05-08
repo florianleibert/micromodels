@@ -2,4 +2,11 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
-exec uv run micromodel-ship "$@"
+if [[ -x "$ROOT_DIR/.venv/bin/micromodel-ship" ]]; then
+  exec "$ROOT_DIR/.venv/bin/micromodel-ship" "$@"
+fi
+if command -v uv >/dev/null 2>&1; then
+  exec uv run micromodel-ship "$@"
+fi
+echo "micromodel-ship runtime is not installed; expected .venv/bin/micromodel-ship" >&2
+exit 127

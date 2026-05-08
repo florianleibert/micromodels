@@ -153,7 +153,7 @@ scripts/status.sh            # show server status and health
 scripts/bench.sh             # plain MLX + DFlash benchmark and metrics capture
 scripts/prefetch.sh          # refresh bundled target + draft from upstream
 scripts/paths.sh             # show resolved target + draft paths
-scripts/package.sh           # build offline tarball
+scripts/package.sh           # build offline tarball with bundled Python runtime
 scripts/publish-hf.sh        # build (if needed) and upload tarball + model card to Hugging Face
 scripts/check-no-secrets.sh  # scan repo text files for common secret material
 ```
@@ -170,6 +170,10 @@ Examples:
 ./scripts/paths.sh
 ./scripts/check-no-secrets.sh
 ```
+
+Release archives are intentionally heavier than a source checkout: they include
+`.venv/`, `models/`, and `.micromodel-runtime/python` so Hydra Desktop can start
+`micromodel-ship` on a clean Mac without installing `uv`.
 
 ## API surface
 

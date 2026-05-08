@@ -15,9 +15,12 @@ contain .venv/ and models/, so run it on the platform you intend Hydra to
 install.
 
 Examples:
-  uv sync --frozen
+  uv python install 3.11
+  PYTHON_BIN="$(uv python find 3.11)"
+  PYTHON_PREFIX="$(cd "$(dirname "$PYTHON_BIN")/.." && pwd)"
+  UV_PROJECT_ENVIRONMENT=.venv uv sync --frozen --python "$PYTHON_BIN"
   ./scripts/prefetch.sh
-  scripts/build-release.sh v0.2.1-alpha.2
+  MICROMODEL_BUNDLED_PYTHON="$PYTHON_PREFIX" scripts/build-release.sh v0.2.1-alpha.2
 USAGE
 }
 

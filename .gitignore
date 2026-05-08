@@ -23,8 +23,8 @@ dist/
 # Model weights and build outputs
 models/
 metrics/*.txt
+.micromodel-runtime/
 
 # Tool scratch state
 .context/
 .pytest_cache/
-
