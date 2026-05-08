@@ -19,9 +19,7 @@ from .config import (
     bundled_model_spec,
 )
 from . import registry
-from .plain_mlx import PlainMLXRuntime
-from .runtime import GenerationRequest, ModelRuntime, prefetch_models
-from .server import MicroModelServer, token_from_env
+from .prefetch import prefetch_models
 
 
 def _make_runtime(
@@ -41,12 +39,16 @@ def _make_runtime(
         model_id = registry.DEFAULT_MODEL_ID
     entry = registry.get(model_id)
     if entry.backend == "dflash":
+        from .runtime import ModelRuntime
+
         return ModelRuntime(
             target_override or entry.target,
             draft_override or entry.draft or None,
             seed=seed,
         )
     if entry.backend == "plain_mlx":
+        from .plain_mlx import PlainMLXRuntime
+
         return PlainMLXRuntime(
             target_override or entry.target,
             seed=seed,
@@ -192,6 +194,8 @@ def cmd_capabilities(_args: argparse.Namespace) -> int:
 def cmd_run(args: argparse.Namespace) -> int:
     if args.no_hf_fallback:
         _ensure_local_paths(args.target_model, args.draft_model)
+    from .runtime import GenerationRequest, ModelRuntime
+
     runtime = ModelRuntime(args.target_model, args.draft_model, seed=args.seed)
     result = runtime.generate(
         GenerationRequest(
@@ -213,6 +217,8 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_chat(args: argparse.Namespace) -> int:
+    from .runtime import GenerationRequest, ModelRuntime
+
     runtime = ModelRuntime(args.target_model, args.draft_model, seed=args.seed)
     history: list[tuple[str, str]] = []
     print("Type a message. Use /exit or Ctrl-D to quit.")
@@ -284,6 +290,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
         draft_override=args.draft_model,
         seed=args.seed,
     )
+    from .server import MicroModelServer, token_from_env
+
     model_name = args.model_name
     if model_name == DEFAULT_MODEL_NAME and model_id != registry.DEFAULT_MODEL_ID:
         # Surface the actual served model in /v1/models rather than always
