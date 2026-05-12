@@ -153,6 +153,15 @@ exec "\$PY" -m micromodel_ship.cli "\$@"
 EOF
 chmod +x ".venv/bin/micromodel-ship"
 
+venv_python_target="../../$BUNDLED_PYTHON_DIR/bin/python3"
+if [[ ! -x "$BUNDLED_PYTHON_DIR/bin/python3" ]]; then
+  venv_python_target="../../$BUNDLED_PYTHON_DIR/bin/$(basename "$bundled_python")"
+fi
+for python_link in ".venv/bin/python" ".venv/bin/python3" ".venv/bin/python${python_version}"; do
+  rm -f "$python_link"
+  ln -s "$venv_python_target" "$python_link"
+done
+
 if [[ ! -d "models" ]]; then
   echo "ERROR: self-contained release artifact requires bundled models/ payload." >&2
   exit 1
